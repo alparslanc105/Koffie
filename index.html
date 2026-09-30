@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Koffie?</title>
+<style>
+:root{--bg:#f3e9dc;--ink:#2b1a10;--yes:#3d2314;--yesink:#fff5e8;--no:#d9c7b2;--noink:#2b1a10;--card:#fbf5ec;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c120c;--ink:#f6e9d8;--yes:#e8b77a;--yesink:#2b1a10;--no:#3a2a20;--noink:#f6e9d8;--card:#2a1c14}}
+:root[data-theme="dark"]{--bg:#1c120c;--ink:#f6e9d8;--yes:#e8b77a;--yesink:#2b1a10;--no:#3a2a20;--noink:#f6e9d8;--card:#2a1c14}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;overflow:hidden;touch-action:manipulation}
+main{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5rem;padding:1.5rem;text-align:center}
+h1{font-size:clamp(2rem,9vw,3.6rem);line-height:1.1;margin:0;font-weight:700;max-width:14ch}
+.cup{font-size:4rem}
+.row{display:flex;gap:1rem;width:100%;max-width:420px;justify-content:center}
+button{font:inherit;font-size:1.6rem;font-weight:700;border:0;border-radius:1.2rem;padding:1.6rem 0;cursor:pointer;width:100%}
+.slot{flex:1 1 0;min-width:0;transition:flex-grow .6s ease;display:flex}
+.slot.gone{flex-grow:0.0001}
+#yesslot{flex:1 1 0;min-width:0;display:flex}
+#yes{background:var(--yes);color:var(--yesink)}
+#no{background:var(--no);color:var(--noink);transition:left .18s,top .18s}
+#no.run{position:fixed;width:130px;z-index:5}
+#done{display:none;width:100%;max-width:420px;background:var(--card);border-radius:1.4rem;padding:1.8rem 1.4rem}
+#done h2{margin:0 0 .4rem;font-size:2rem}
+#done p{margin:.2rem 0 1.2rem}
+label{display:block;text-align:left;font-size:1rem;margin:.8rem 0 .3rem}
+input{width:100%;font:inherit;font-size:1.2rem;padding:.8rem;border-radius:.8rem;border:2px solid var(--no);background:var(--bg);color:var(--ink)}
+#ok{width:100%;margin-top:1.2rem;background:var(--yes);color:var(--yesink);font-size:1.3rem;padding:1.1rem 0}
+#result{margin-top:1rem;font-size:1.2rem;min-height:1.5em}
+</style>
+</head>
+<body>
+<main>
+  <div id="ask" style="display:contents">
+    <div class="cup">☕</div>
+    <h1>Wil je koffie met me drinken?</h1>
+    <div class="row" id="row">
+      <div id="yesslot"><button id="yes">Ja</button></div>
+      <div class="slot" id="slot"><button id="no">Nee</button></div>
+    </div>
+  </div>
+  <section id="done">
+    <h2>Gefeliciteerd! 🎉</h2>
+    <p>Goed antwoord. Kies nu een dag en tijd.</p>
+    <label for="d">Datum</label>
+    <input type="date" id="d">
+    <label for="t">Tijd</label>
+    <input type="time" id="t">
+    <button id="ok">Klaar</button>
+    <div id="result"></div>
+  </section>
+</main>
+<script>
+// !!! BURAYI DEĞİŞTİR !!!  Formspree'den aldığın adres (https://formspree.io/f/xxxxxxxx)
+var FORM_URL = 'https://formspree.io/f/xeaodzky';
+
+var no=document.getElementById('no'),yes=document.getElementById('yes');
+function dodge(e){
+  if(e){e.preventDefault();}
+  var w=130,h=no.offsetHeight||70;
+  if(!no.classList.contains('run')){no.classList.add('run');setTimeout(function(){document.getElementById('slot').classList.add('gone');},900);}
+  var x=Math.random()*(window.innerWidth-w-20)+10;
+  var y=Math.random()*(window.innerHeight-h-40)+20;
+  no.style.left=x+'px';no.style.top=y+'px';
+}
+no.addEventListener('mouseover',dodge);
+no.addEventListener('touchstart',dodge,{passive:false});
+no.addEventListener('click',dodge);
+yes.addEventListener('click',function(){
+  document.getElementById('ask').style.display='none';
+  no.style.display='none';
+  document.getElementById('done').style.display='block';
+});
+document.getElementById('ok').addEventListener('click',function(){
+  var d=document.getElementById('d').value,t=document.getElementById('t').value,r=document.getElementById('result'),b=document.getElementById('ok');
+  if(!d||!t){r.textContent='Kies een datum en tijd.';return;}
+  var s=new Date(d+'T'+t).toLocaleString('nl-NL',{dateStyle:'full',timeStyle:'short'});
+  b.disabled=true;
+  fetch(FORM_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({datum:d,tijd:t,afspraak:s})
+  })
+    .then(function(x){if(!x.ok){throw new Error('status '+x.status);}return x.json();})
+    .then(function(){r.textContent='Afgesproken: '+s+' ☕';})
+    .catch(function(){b.disabled=false;r.textContent='Opslaan mislukt. Probeer het opnieuw.';});
+});
+</script>
+</body>
+</html>
